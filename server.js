@@ -12,12 +12,17 @@ const jwt = require('jsonwebtoken');
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(
+  cors({
+    origin: [process.env.CLIENT_URL, 'http://localhost:5173'],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 const path = require('path');
 
-app.use(express.static(path.join(__dirname, 'dist'))); // put this line of code in app.js
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Connect to MongoDB
 mongoose
