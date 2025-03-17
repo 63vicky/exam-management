@@ -16,7 +16,7 @@ app.use(express.json());
 
 const path = require('path');
 
-app.use(express.static(path.join(__dirname, 'build'))); // put this line of code in app.js
+app.use(express.static(path.join(__dirname, 'dist'))); // put this line of code in app.js
 
 // Connect to MongoDB
 mongoose
