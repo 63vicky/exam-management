@@ -1,27 +1,53 @@
 const mongoose = require('mongoose');
 
-const ExamSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  questionPool: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Question',
-    },
-  ],
-  totalQuestions: { type: Number, required: true },
-  maxAttempts: { type: Number, default: 5 },
-  durationPerQuestion: { type: Number, default: 1 }, // Minutes per question
-  duration: { type: Number, required: true }, // Calculated automatically
+const examSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: [true, 'Please provide exam title'],
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: [true, 'Please provide exam description'],
+  },
+  duration: {
+    type: Number,
+    required: [true, 'Please provide exam duration in minutes'],
+  },
+  startTime: {
+    type: Date,
+    required: [true, 'Please provide exam start time'],
+  },
+  endTime: {
+    type: Date,
+    required: [true, 'Please provide exam end time'],
+  },
+  totalMarks: {
+    type: Number,
+    required: [true, 'Please provide total marks'],
+  },
+  passingMarks: {
+    type: Number,
+    required: [true, 'Please provide passing marks'],
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    required: true,
+  },
+  subject: {
+    type: String,
+    required: [true, 'Please provide subject name'],
+  },
+  status: {
+    type: String,
+    enum: ['draft', 'published', 'completed'],
+    default: 'draft',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
   },
 });
 
-// Auto-calculate duration based on totalQuestions and durationPerQuestion
-ExamSchema.pre('save', function (next) {
-  this.duration = this.totalQuestions * this.durationPerQuestion;
-  next();
-});
-
-module.exports = mongoose.model('Exam', ExamSchema);
+module.exports = mongoose.model('Exam', examSchema);

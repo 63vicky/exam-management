@@ -1,93 +1,116 @@
 const express = require('express');
 const router = express.Router();
 const Exam = require('../models/Exam');
-const auth = require('../middleware/auth');
-const adminCheck = require('../middleware/adminCheck');
+const { protect, authorize } = require('../middleware/auth');
 
-// Create Exam (Admin Only)
-router.post('/create', [auth, adminCheck], async (req, res) => {
-  const { title, questionPool, totalQuestions, durationPerQuestion } = req.body;
-
-  // Validate question pool has enough questions
-  if (questionPool.length < totalQuestions) {
-    return res.status(400).json({ error: 'Not enough questions in the pool' });
-  }
-
-  const exam = new Exam({
-    title,
-    questionPool,
-    totalQuestions,
-    durationPerQuestion: durationPerQuestion || 1,
-    createdBy: req.user.id,
-  });
-
+// Get all exams
+router.get('/', protect, async (req, res) => {
   try {
-    await exam.save();
+    const exams = await Exam.find().populate('createdBy', 'name email');
+    res.json(exams);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching exams' });
+  }
+});
+
+// Get single exam
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.id).populate(
+      'createdBy',
+      'name email'
+    );
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+    res.json(exam);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching exam' });
+  }
+});
+
+// Create exam (teachers and admins only)
+router.post('/', protect, authorize('teacher', 'admin'), async (req, res) => {
+  try {
+    const exam = await Exam.create({
+      ...req.body,
+      createdBy: req.user._id,
+    });
     res.status(201).json(exam);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating exam' });
   }
 });
 
-// Get Exam Questions (for taking the exam)
-router.get('/:examId/questions', auth, async (req, res) => {
-  const examId = req.params.examId;
-  const exam = await Exam.findById(examId).populate('questionPool');
-  if (!exam) return res.status(404).json({ error: 'Exam not found' });
+// Update exam (teachers and admins only)
+router.put('/:id', protect, authorize('teacher', 'admin'), async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.id);
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
 
-  // Check remaining attempts
-  const existingAttempts = await Result.countDocuments({
-    user: req.user.id,
-    exam: examId,
-  });
-  if (existingAttempts >= exam.maxAttempts) {
-    return res.status(403).json({ error: 'Max attempts reached' });
+    // Check if user is the creator or admin
+    if (
+      exam.createdBy.toString() !== req.user._id.toString() &&
+      req.user.role !== 'admin'
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to update this exam' });
+    }
+
+    const updatedExam = await Exam.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+    res.json(updatedExam);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating exam' });
   }
-
-  // Randomize and select questions
-  const shuffledQuestions = exam.questionPool.sort(() => 0.5 - Math.random());
-  const selectedQuestions = shuffledQuestions.slice(0, exam.totalQuestions);
-
-  res.json(selectedQuestions);
 });
 
-// Submit Exam Answers
-router.post('/:examId/submit', auth, async (req, res) => {
-  const examId = req.params.examId;
-  const { answers } = req.body; // Array of { questionId, answer }
+// Delete exam (teachers and admins only)
+router.delete(
+  '/:id',
+  protect,
+  authorize('teacher', 'admin'),
+  async (req, res) => {
+    try {
+      const exam = await Exam.findById(req.params.id);
+      if (!exam) {
+        return res.status(404).json({ message: 'Exam not found' });
+      }
 
-  // Validate attempt count
-  const existingAttempts = await Result.countDocuments({
-    user: req.user.id,
-    exam: examId,
-  });
-  if (existingAttempts >= 5) {
-    return res.status(403).json({ error: 'Max attempts reached' });
+      // Check if user is the creator or admin
+      if (
+        exam.createdBy.toString() !== req.user._id.toString() &&
+        req.user.role !== 'admin'
+      ) {
+        return res
+          .status(403)
+          .json({ message: 'Not authorized to delete this exam' });
+      }
+
+      await exam.remove();
+      res.json({ message: 'Exam deleted successfully' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error deleting exam' });
+    }
   }
+);
 
-  // Get exam details and questions
-  const exam = await Exam.findById(examId);
-  const questionIds = answers.map((a) => a.questionId);
-  const questions = await Question.find({ _id: { $in: questionIds } });
-
-  let score = 0;
-  questions.forEach((question) => {
-    const userAnswer = answers.find(
-      (a) => a.questionId.toString() === question._id.toString()
-    )?.answer;
-    if (userAnswer === question.answer) score++;
-  });
-
-  // Save result
-  const newAttempt = existingAttempts + 1;
-  const result = await Result.create({
-    exam: examId,
-    user: req.user.id,
-    score,
-    attemptNumber: newAttempt,
-  });
-
-  res.json({ success: true, result });
+// Get exams by teacher
+router.get('/teacher/:teacherId', protect, async (req, res) => {
+  try {
+    const exams = await Exam.find({ createdBy: req.params.teacherId }).populate(
+      'createdBy',
+      'name email'
+    );
+    res.json(exams);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching teacher exams' });
+  }
 });
 
 module.exports = router;

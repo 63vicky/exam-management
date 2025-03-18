@@ -1,30 +1,65 @@
 const mongoose = require('mongoose');
 
-const ResultSchema = new mongoose.Schema({
-  exam: {
+const resultSchema = new mongoose.Schema({
+  examId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Exam',
     required: true,
   },
-  user: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  score: { type: Number, required: true },
-  rating: { type: String },
-  attemptNumber: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now },
+  answers: [
+    {
+      questionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Question',
+        required: true,
+      },
+      selectedOption: {
+        type: String,
+        required: true,
+      },
+      isCorrect: {
+        type: Boolean,
+        required: true,
+      },
+      marks: {
+        type: Number,
+        required: true,
+      },
+    },
+  ],
+  totalMarks: {
+    type: Number,
+    required: true,
+  },
+  obtainedMarks: {
+    type: Number,
+    required: true,
+  },
+  percentage: {
+    type: Number,
+    required: true,
+  },
+  isPassed: {
+    type: Boolean,
+    required: true,
+  },
+  startTime: {
+    type: Date,
+    required: true,
+  },
+  endTime: {
+    type: Date,
+    required: true,
+  },
+  submittedAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-// Auto-calculate rating based on score
-ResultSchema.pre('save', function (next) {
-  const score = this.score;
-  if (score >= 90) this.rating = 'Excellent';
-  else if (score >= 75) this.rating = 'Good';
-  else if (score >= 60) this.rating = 'Pass';
-  else this.rating = 'Fail';
-  next();
-});
-
-module.exports = mongoose.model('Result', ResultSchema);
+module.exports = mongoose.model('Result', resultSchema);

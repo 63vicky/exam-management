@@ -5,13 +5,18 @@ const dotenv = require('dotenv');
 const userRoutes = require('./routes/users');
 const examRoutes = require('./routes/exams');
 const questionRoutes = require('./routes/questions');
+const resultRoutes = require('./routes/results');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Load environment variables
 dotenv.config();
 
+// Create Express app
 const app = express();
+
+// Middleware
 app.use(
   cors({
     origin: [process.env.CLIENT_URL, 'http://localhost:5173'],
@@ -33,9 +38,11 @@ mongoose
   .catch((err) => console.error(err));
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', userRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/questions', questionRoutes);
+app.use('/api/results', resultRoutes);
 
 // Routes
 app.post('/api/auth/login', async (req, res) => {
@@ -133,5 +140,14 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
