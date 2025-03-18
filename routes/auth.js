@@ -29,9 +29,20 @@ router.post('/register', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE }
     );
 
+    // Calculate token expiration
+    const expiresIn = parseInt(process.env.JWT_EXPIRE) * 24 * 60 * 60 * 1000; // Convert days to milliseconds
+    const tokenExpiration = new Date().getTime() + expiresIn;
+
     res.status(201).json({
       success: true,
       token,
+      tokenExpiration,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -63,9 +74,20 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE }
     );
 
+    // Calculate token expiration
+    const expiresIn = parseInt(process.env.JWT_EXPIRE) * 24 * 60 * 60 * 1000; // Convert days to milliseconds
+    const tokenExpiration = new Date().getTime() + expiresIn;
+
     res.json({
       success: true,
       token,
+      tokenExpiration,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
     console.error(error);
