@@ -6,6 +6,7 @@ const userRoutes = require('./routes/users');
 const examRoutes = require('./routes/exams');
 const questionRoutes = require('./routes/questions');
 const resultRoutes = require('./routes/results');
+const statsRoutes = require('./routes/stats');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -43,6 +44,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/results', resultRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Routes
 app.post('/api/auth/login', async (req, res) => {
