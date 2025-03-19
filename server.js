@@ -11,6 +11,7 @@ const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const paperRoutes = require('./routes/paperRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +48,7 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/papers', paperRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Routes
 app.post('/api/auth/login', async (req, res) => {

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const paperSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, 'Please provide paper name'],
     trim: true
   },
   type: {
@@ -93,6 +93,11 @@ const paperSchema = new mongoose.Schema({
   userGroups: [{
     type: String
   }],
+  status: {
+    type: String,
+    enum: ['Active', 'Deactive'],
+    default: 'Active'
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
