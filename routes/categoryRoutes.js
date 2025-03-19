@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 const {
   getAllCategories,
   createMainCategory,
@@ -12,7 +12,7 @@ const {
 } = require('../controllers/categoryController');
 
 // Get all categories
-router.get('/', protect, getAllCategories);
+router.get('/', protect, authorize('admin'), getAllCategories);
 
 // Create main category
 router.post('/main', protect, createMainCategory);
