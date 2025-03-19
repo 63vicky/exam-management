@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const paperController = require('../controllers/paperController');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
 // Apply protect middleware to all routes
-router.use(protect);
+router.use(protect, authorize('teacher', 'admin'));
 
 // Paper routes
 router.post('/', paperController.createPaper);
