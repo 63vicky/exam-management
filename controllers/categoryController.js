@@ -112,7 +112,7 @@ exports.deleteSubCategory = asyncHandler(async (req, res) => {
   }
 
   // Remove the sub category
-  subCategory.remove();
+  subCategory.deleteOne();
   await category.save();
 
   res.status(200).json({ message: 'Sub category deleted successfully' });
