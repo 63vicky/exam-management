@@ -3,6 +3,18 @@ const router = express.Router();
 const Question = require('../models/Question');
 const { protect, authorize } = require('../middleware/auth');
 
+// Get all questions
+router.get('/', protect, async (req, res) => {
+  try {
+    const questions = await Question.find()
+      .populate('createdBy', 'name email')
+      .populate('examId', 'title');
+    res.json(questions);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching questions' });
+  }
+});
+
 // Get all questions for an exam
 router.get('/exam/:examId', protect, async (req, res) => {
   try {
@@ -39,7 +51,7 @@ router.post('/', protect, authorize('teacher', 'admin'), async (req, res) => {
     });
     res.status(201).json(question);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating question' });
+    res.status(500).json({ message: 'Error creating question', error });
   }
 });
 
@@ -94,7 +106,7 @@ router.delete(
           .json({ message: 'Not authorized to delete this question' });
       }
 
-      await question.remove();
+      await question.deleteOne();
       res.json({ message: 'Question deleted successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Error deleting question' });

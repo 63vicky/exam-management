@@ -4,7 +4,7 @@ const questionSchema = new mongoose.Schema({
   examId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Exam',
-    required: true,
+    
   },
   questionText: {
     type: String,
@@ -33,6 +33,24 @@ const questionSchema = new mongoose.Schema({
   },
   explanation: {
     type: String,
+  },
+  mainCategory: {
+    type: String,
+    required: [true, 'Please provide main category'],
+  },
+  subCategory: {
+    type: String,
+    required: [true, 'Please provide sub category'],
+  },
+  level: {
+    type: String,
+    enum: ['top-simple', 'top-medium', 'top-hard'],
+    required: [true, 'Please provide difficulty level'],
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive'],
+    default: 'Active',
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
