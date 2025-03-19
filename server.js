@@ -10,6 +10,7 @@ const statsRoutes = require('./routes/stats');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const paperRoutes = require('./routes/paperRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +46,7 @@ app.use('/api/exams', examRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/papers', paperRoutes);
 
 // Routes
 app.post('/api/auth/login', async (req, res) => {
