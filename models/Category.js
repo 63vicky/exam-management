@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const subCategorySchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, 'Sub category name is required'],
     trim: true
   },
   description: {
@@ -18,14 +18,16 @@ const subCategorySchema = new mongoose.Schema({
     type: Number,
     default: 0
   }
-}, { timestamps: true });
+}, {
+  timestamps: true
+});
 
 const categorySchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
-    unique: true,
-    trim: true
+    required: [true, 'Category name is required'],
+    trim: true,
+    unique: true
   },
   description: {
     type: String,
@@ -40,6 +42,12 @@ const categorySchema = new mongoose.Schema({
     default: 0
   },
   subCategories: [subCategorySchema]
-}, { timestamps: true });
+}, {
+  timestamps: true
+});
+
+// Index for faster queries
+categorySchema.index({ name: 1 });
+categorySchema.index({ 'subCategories.name': 1 });
 
 module.exports = mongoose.model('Category', categorySchema); 

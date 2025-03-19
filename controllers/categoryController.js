@@ -1,147 +1,119 @@
 const Category = require('../models/Category');
+const asyncHandler = require('../middleware/asyncHandler');
 
-// Get all categories
-exports.getAllCategories = async (req, res) => {
-  try {
-    const categories = await Category.find();
-    res.json(categories);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+// @desc    Get all categories
+// @route   GET /api/categories
+// @access  Private
+exports.getAllCategories = asyncHandler(async (req, res) => {
+  const categories = await Category.find();
+  res.status(200).json(categories);
+});
+
+// @desc    Create main category
+// @route   POST /api/categories/main
+// @access  Private
+exports.createMainCategory = asyncHandler(async (req, res) => {
+  const category = await Category.create({
+    name: req.body.name,
+    description: req.body.description,
+    isActive: true,
+    questionCount: 0,
+    subCategories: []
+  });
+  res.status(201).json(category);
+});
+
+// @desc    Add sub category
+// @route   POST /api/categories/sub
+// @access  Private
+exports.addSubCategory = asyncHandler(async (req, res) => {
+  const { mainCategoryId, name, description } = req.body;
+  
+  const category = await Category.findById(mainCategoryId);
+  if (!category) {
+    return res.status(404).json({ message: 'Main category not found' });
   }
-};
 
-// Create main category
-exports.createMainCategory = async (req, res) => {
-  try {
-    const { name, description } = req.body;
-    
-    if (!name) {
-      return res.status(400).json({ message: 'Category name is required' });
-    }
+  category.subCategories.push({
+    name,
+    description,
+    isActive: true,
+    questionCount: 0
+  });
 
-    const existingCategory = await Category.findOne({ name });
-    if (existingCategory) {
-      return res.status(400).json({ message: 'Category already exists' });
-    }
+  await category.save();
+  res.status(201).json(category);
+});
 
-    const category = new Category({
-      name,
-      description
-    });
-
-    const savedCategory = await category.save();
-    res.status(201).json(savedCategory);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+// @desc    Update category status
+// @route   PATCH /api/categories/status
+// @access  Private
+exports.updateCategoryStatus = asyncHandler(async (req, res) => {
+  const { categoryId, isActive } = req.body;
+  
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    return res.status(404).json({ message: 'Category not found' });
   }
-};
 
-// Add subcategory to main category
-exports.addSubCategory = async (req, res) => {
-  try {
-    const { mainCategoryId, name, description } = req.body;
+  category.isActive = isActive;
+  await category.save();
+  res.status(200).json(category);
+});
 
-    if (!mainCategoryId || !name) {
-      return res.status(400).json({ message: 'Main category ID and subcategory name are required' });
-    }
-
-    const category = await Category.findById(mainCategoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Main category not found' });
-    }
-
-    const existingSubCategory = category.subCategories.find(sub => sub.name === name);
-    if (existingSubCategory) {
-      return res.status(400).json({ message: 'Subcategory already exists' });
-    }
-
-    category.subCategories.push({
-      name,
-      description
-    });
-
-    const updatedCategory = await category.save();
-    res.json(updatedCategory);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+// @desc    Update sub category status
+// @route   PATCH /api/categories/sub/status
+// @access  Private
+exports.updateSubCategoryStatus = asyncHandler(async (req, res) => {
+  const { categoryId, subCategoryId, isActive } = req.body;
+  
+  const category = await Category.findById(categoryId);
+  if (!category) {
+    return res.status(404).json({ message: 'Category not found' });
   }
-};
 
-// Update category status
-exports.updateCategoryStatus = async (req, res) => {
-  try {
-    const { categoryId, isActive } = req.body;
-
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-
-    category.isActive = isActive;
-    const updatedCategory = await category.save();
-    res.json(updatedCategory);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const subCategory = category.subCategories.id(subCategoryId);
+  if (!subCategory) {
+    return res.status(404).json({ message: 'Sub category not found' });
   }
-};
 
-// Update subcategory status
-exports.updateSubCategoryStatus = async (req, res) => {
-  try {
-    const { categoryId, subCategoryId, isActive } = req.body;
+  subCategory.isActive = isActive;
+  await category.save();
+  res.status(200).json(category);
+});
 
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-
-    const subCategory = category.subCategories.id(subCategoryId);
-    if (!subCategory) {
-      return res.status(404).json({ message: 'Subcategory not found' });
-    }
-
-    subCategory.isActive = isActive;
-    const updatedCategory = await category.save();
-    res.json(updatedCategory);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+// @desc    Delete category
+// @route   DELETE /api/categories/:categoryId
+// @access  Private
+exports.deleteCategory = asyncHandler(async (req, res) => {
+  const category = await Category.findById(req.params.categoryId);
+  if (!category) {
+    return res.status(404).json({ message: 'Category not found' });
   }
-};
 
-// Delete category
-exports.deleteCategory = async (req, res) => {
-  try {
-    const { categoryId } = req.params;
-    
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
+  await category.remove();
+  res.status(200).json({ message: 'Category deleted successfully' });
+});
 
-    await category.deleteOne();
-    res.json({ message: 'Category deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+// @desc    Delete sub category
+// @route   DELETE /api/categories/:mainCategoryId/subcategories/:subCategoryId
+// @access  Private
+exports.deleteSubCategory = asyncHandler(async (req, res) => {
+  const { mainCategoryId, subCategoryId } = req.params;
+  
+  const category = await Category.findById(mainCategoryId);
+  if (!category) {
+    return res.status(404).json({ message: 'Main category not found' });
   }
-};
 
-// Delete subcategory
-exports.deleteSubCategory = async (req, res) => {
-  try {
-    const { categoryId, subCategoryId } = req.params;
-
-    const category = await Category.findById(categoryId);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-
-    category.subCategories = category.subCategories.filter(
-      sub => sub._id.toString() !== subCategoryId
-    );
-
-    const updatedCategory = await category.save();
-    res.json(updatedCategory);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const subCategory = category.subCategories.id(subCategoryId);
+  if (!subCategory) {
+    return res.status(404).json({ message: 'Sub category not found' });
   }
-}; 
+
+  // Remove the sub category
+  subCategory.remove();
+  await category.save();
+
+  res.status(200).json({ message: 'Sub category deleted successfully' });
+}); 

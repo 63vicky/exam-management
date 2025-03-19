@@ -1,35 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { protect, authorize } = require('../middleware/auth');
-const {
-  getAllCategories,
-  createMainCategory,
-  addSubCategory,
-  updateCategoryStatus,
-  updateSubCategoryStatus,
-  deleteCategory,
-  deleteSubCategory
-} = require('../controllers/categoryController');
+const categoryController = require('../controllers/categoryController');
+const { protect } = require('../middleware/authMiddleware');
 
-// Get all categories
-router.get('/', protect, authorize('admin'), getAllCategories);
+// Apply protect middleware to all routes
+router.use(protect);
 
-// Create main category
-router.post('/main', protect, createMainCategory);
+// Main category routes
+router.get('/', categoryController.getAllCategories);
+router.post('/main', categoryController.createMainCategory);
+router.post('/sub', categoryController.addSubCategory);
+router.patch('/status', categoryController.updateCategoryStatus);
+router.patch('/sub/status', categoryController.updateSubCategoryStatus);
+router.delete('/:categoryId', categoryController.deleteCategory);
 
-// Add subcategory
-router.post('/sub', protect, addSubCategory);
-
-// Update category status
-router.patch('/status', protect, updateCategoryStatus);
-
-// Update subcategory status
-router.patch('/sub/status', protect, updateSubCategoryStatus);
-
-// Delete category
-router.delete('/:categoryId', protect, deleteCategory);
-
-// Delete subcategory
-router.delete('/:categoryId/sub/:subCategoryId', protect, deleteSubCategory);
+// Sub-category routes
+router.delete('/:mainCategoryId/subcategories/:subCategoryId', categoryController.deleteSubCategory);
 
 module.exports = router; 
