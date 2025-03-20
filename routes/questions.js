@@ -137,4 +137,35 @@ router.post(
   }
 );
 
+// Update question status
+router.patch('/:id/status', protect, authorize('teacher', 'admin'), async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!['Active', 'Inactive'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const question = await Question.findById(req.params.id);
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    // Check if user is the creator or admin
+    if (
+      question.createdBy.toString() !== req.user._id.toString() &&
+      req.user.role !== 'admin'
+    ) {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to update this question' });
+    }
+
+    question.status = status;
+    await question.save();
+    res.json(question);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating question status' });
+  }
+});
+
 module.exports = router;
