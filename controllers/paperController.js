@@ -5,18 +5,48 @@ exports.createPaper = async (req, res) => {
   try {
     const {
       name,
+      type,
+      passingPercentage,
+      defaultMarks,
+      negativeMarks,
+      duration,
+      maxTabSwitch,
       startDate,
       endDate,
-      totalQuestions,
-      duration,
-      questionMode,
-      status,
-      ...otherFields
+      instructions,
+      questionAddMethod,
+      viewCorrectAnswers,
+      emailNotify,
+      directLogin,
+      randomQuestions,
+      randomOptions,
+      proctored,
+      showResult,
+      customExeOnly,
+      fileUpload,
+      userGroups,
+      status
     } = req.body;
-
+    
     // Validate required fields
-    if (!name || !startDate || !endDate || !duration || !questionMode) {
+    if (!name || !type || 
+        passingPercentage === undefined || passingPercentage === null || passingPercentage === '' ||
+        defaultMarks === undefined || defaultMarks === null || defaultMarks === '' ||
+        negativeMarks === undefined || negativeMarks === null || negativeMarks === '' ||
+        duration === undefined || duration === null || duration === '' ||
+        maxTabSwitch === undefined || maxTabSwitch === null || maxTabSwitch === '' ||
+        !startDate || !endDate || !questionAddMethod) {
       return res.status(400).json({ message: 'Please provide all required fields' });
+    }
+
+    // Validate paper type
+    if (!['exam', 'quiz', 'test', 'assignment', 'mid-term', 'final'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid paper type' });
+    }
+
+    // Validate question add method
+    if (!['automatic', 'manual'].includes(questionAddMethod)) {
+      return res.status(400).json({ message: 'Invalid question add method' });
     }
 
     // Convert date strings to Date objects
@@ -34,13 +64,27 @@ exports.createPaper = async (req, res) => {
 
     const paperData = {
       name,
+      type,
+      passingPercentage,
+      defaultMarks,
+      negativeMarks,
+      duration,
+      maxTabSwitch,
       startDate: formattedStartDate,
       endDate: formattedEndDate,
-      totalQuestions: totalQuestions || 0,
-      duration,
-      questionMode,
+      instructions: instructions || '',
+      questionAddMethod,
+      viewCorrectAnswers: viewCorrectAnswers || false,
+      emailNotify: emailNotify || false,
+      directLogin: directLogin || false,
+      randomQuestions: randomQuestions || false,
+      randomOptions: randomOptions || false,
+      proctored: proctored || false,
+      showResult: showResult || false,
+      customExeOnly: customExeOnly || false,
+      fileUpload: fileUpload || false,
+      userGroups: userGroups || [],
       status: status || 'Active',
-      ...otherFields,
       createdBy: req.user._id
     };
 
@@ -58,7 +102,15 @@ exports.getAllPapers = async (req, res) => {
     const papers = await Paper.find()
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 });
-    res.json(papers);
+    
+    // Add totalQuestions field to each paper
+    const papersWithCount = papers.map(paper => {
+      const paperObj = paper.toObject();
+      paperObj.totalQuestions = paper.questions ? paper.questions.length : 0;
+      return paperObj;
+    });
+
+    res.json(papersWithCount);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -123,7 +175,7 @@ exports.deletePaper = async (req, res) => {
     if (!paper) {
       return res.status(404).json({ message: 'Paper not found' });
     }
-    await paper.remove();
+    await paper.deleteOne();
     res.json({ message: 'Paper deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -146,6 +198,46 @@ exports.updatePaperStatus = async (req, res) => {
     paper.status = status;
     await paper.save();
     res.json(paper);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Add questions to paper
+exports.addQuestionsToPaper = async (req, res) => {
+  try {
+    const { questions } = req.body;
+    const paperId = req.params.id;
+
+    const paper = await Paper.findById(paperId);
+    if (!paper) {
+      return res.status(404).json({ message: 'Paper not found' });
+    }
+
+    // Add questions to paper
+    if (!paper.questions) {
+      paper.questions = [];
+    }
+    paper.questions = [...paper.questions, ...questions];
+    
+    await paper.save();
+    res.json(paper);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get paper questions
+exports.getPaperQuestions = async (req, res) => {
+  try {
+    const paperId = req.params.id;
+    const paper = await Paper.findById(paperId).populate('questions');
+    
+    if (!paper) {
+      return res.status(404).json({ message: 'Paper not found' });
+    }
+
+    res.json(paper.questions || []);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

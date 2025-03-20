@@ -54,6 +54,10 @@ const paperSchema = new mongoose.Schema({
     required: true,
     enum: ['automatic', 'manual']
   },
+  questions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Question'
+  }],
   viewCorrectAnswers: {
     type: Boolean,
     default: false

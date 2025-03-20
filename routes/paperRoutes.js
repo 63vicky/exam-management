@@ -14,4 +14,8 @@ router.put('/:id', paperController.updatePaper);
 router.delete('/:id', paperController.deletePaper);
 router.patch('/:id/status', paperController.updatePaperStatus);
 
+// Add questions to paper route
+router.post('/:id/questions', paperController.addQuestionsToPaper);
+router.get('/:id/questions', paperController.getPaperQuestions);
+
 module.exports = router; 
