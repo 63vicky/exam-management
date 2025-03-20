@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const userRoutes = require('./routes/users');
 const examRoutes = require('./routes/exams');
 const questionRoutes = require('./routes/questions');
@@ -28,22 +29,23 @@ app.use(
   })
 );
 
-const path = require('path');
+// Serve static files from the dist directory
+const distPath = path.join(__dirname, 'dist');
+app.use(express.static(distPath));
 
-// Middleware to disable caching (fixes 304 Not Modified issue)
-app.use((req, res, next) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  next();
-});
+// API Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', userRoutes);
+app.use('/api/exams', examRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/results', resultRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/papers', paperRoutes);
+app.use('/api/categories', categoryRoutes);
 
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, "dist")));
-
-// Catch-all handler for React routes
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+// Handle client-side routing - this should be after all API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Connect to MongoDB
@@ -53,16 +55,6 @@ mongoose
   })
   .then(() => console.log('MongoDB Connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
-
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', userRoutes);
-app.use('/api/exams', examRoutes);
-app.use('/api/questions', questionRoutes);
-app.use('/api/results', resultRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/papers', paperRoutes);
-app.use('/api/categories', categoryRoutes);
 
 // Routes
 app.post('/api/auth/login', async (req, res) => {
