@@ -30,7 +30,14 @@ app.use(
 
 const path = require('path');
 
-app.use('/', express.static(path.join(__dirname, 'dist')));
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, "dist")));
+
+// Catch-all handler for React routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 
 // Connect to MongoDB
 mongoose
