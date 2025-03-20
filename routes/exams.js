@@ -92,7 +92,7 @@ router.delete(
           .json({ message: 'Not authorized to delete this exam' });
       }
 
-      await exam.remove();
+      await exam.deleteOne();
       res.json({ message: 'Exam deleted successfully' });
     } catch (error) {
       res.status(500).json({ message: 'Error deleting exam' });

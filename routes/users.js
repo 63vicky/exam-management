@@ -87,7 +87,7 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
       return res.status(403).json({ message: 'Cannot delete admin user' });
     }
 
-    await user.remove();
+    await user.deleteOne();
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
