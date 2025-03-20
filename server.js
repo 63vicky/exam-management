@@ -30,6 +30,13 @@ app.use(
 
 const path = require('path');
 
+// Middleware to disable caching (fixes 304 Not Modified issue)
+app.use((req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, "dist")));
