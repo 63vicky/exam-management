@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema({
       'Please provide a valid email',
     ],
   },
+  mobile: {
+    type: String,
+    required: [true, 'Please provide a mobile number'],
+    trim: true,
+  },
   password: {
     type: String,
     required: [true, 'Please provide a password'],
@@ -26,6 +31,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['student', 'teacher', 'admin'],
     default: 'student',
+  },
+  group: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    required: [true, 'Please provide a group'],
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive'],
+    default: 'Active',
   },
   createdAt: {
     type: Date,

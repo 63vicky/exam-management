@@ -32,8 +32,19 @@ router.post('/login', async (req, res) => {
 // Get all users (admin only)
 router.get('/', protect, authorize('admin'), async (req, res) => {
   try {
-    const users = await User.find().select('-password');
-    res.json(users);
+    const users = await User.find()
+      .select('-password')
+      .populate('group', 'name')
+      .lean();
+
+    // Transform the response to include groupName
+    const transformedUsers = users.map((user) => ({
+      ...user,
+      groupName: user.group?.name || 'N/A',
+      group: user.group?._id || user.group, // Keep the original group ID
+    }));
+
+    res.json(transformedUsers);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -101,6 +112,96 @@ router.get('/me', protect, async (req, res) => {
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Create new user (admin only)
+router.post('/', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { name, email, password, role, group, mobile, status } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      mobile,
+      password: hashedPassword,
+      role,
+      group,
+      status: status || 'Active',
+    });
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json(userResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get user by ID (admin only)
+router.get('/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id)
+      .select('-password')
+      .populate('group', 'name')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Transform the response to include groupName
+    const transformedUser = {
+      ...user,
+      groupName: user.group?.name || 'N/A',
+    };
+
+    res.json(transformedUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user (admin only)
+router.put('/:id', protect, authorize('admin'), async (req, res) => {
+  try {
+    const { name, email, mobile, role, group, status } = req.body;
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update user fields
+    user.name = name;
+    user.email = email;
+    user.mobile = mobile;
+    user.role = role;
+    user.group = group;
+    user.status = status;
+
+    await user.save();
+
+    // Remove password from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.json(userResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

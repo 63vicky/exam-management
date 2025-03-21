@@ -13,6 +13,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const paperRoutes = require('./routes/paperRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const groupRoutes = require('./routes/groups');
 
 // Load environment variables
 dotenv.config();
@@ -42,6 +43,7 @@ app.use('/api/results', resultRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/papers', paperRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Handle client-side routing - this should be after all API routes
 app.get('*', (req, res) => {
