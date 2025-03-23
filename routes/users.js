@@ -4,6 +4,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { protect, authorize } = require('../middleware/auth');
+const { sendEmail } = require('../utils/email');
 
 // Register User
 router.post('/register', async (req, res) => {
@@ -202,6 +203,63 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
     res.json(userResponse);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Bulk create users (admin only)
+router.post('/bulk', protect, authorize('admin'), async (req, res) => {
+  try {
+    const users = req.body;
+    
+    // Hash passwords and create users
+    const createdUsers = await Promise.all(
+      users.map(async (user) => {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        return User.create({
+          ...user,
+          password: hashedPassword,
+        });
+      })
+    );
+
+    // Send emails if requested
+    if (users[0]?.sendEmail) {
+      
+      await Promise.all(
+        createdUsers.map(async (user) => {
+          const emailContent = `
+            Dear ${user.name},
+            
+            Your account has been created. Here are your login details:
+            
+            Email: ${user.email}
+            Password: ${user.password}
+            
+            ${user.forceReset ? 'Please change your password upon first login.' : ''}
+            
+            Best regards,
+            Your Exam Management System Team
+          `;
+
+          await sendEmail({
+            to: user.email,
+            subject: 'Account Created - Exam Management System',
+            text: emailContent,
+          });
+        })
+      );
+    }
+
+    // Remove passwords from response
+    const usersResponse = createdUsers.map(user => {
+      const userObj = user.toObject();
+      delete userObj.password;
+      return userObj;
+    });
+
+    res.status(201).json(usersResponse);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating users in bulk', error: error.message });
   }
 });
 

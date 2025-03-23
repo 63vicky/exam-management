@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
 const userRoutes = require('./routes/users');
 const examRoutes = require('./routes/exams');
 const questionRoutes = require('./routes/questions');
@@ -14,6 +15,9 @@ const jwt = require('jsonwebtoken');
 const paperRoutes = require('./routes/paperRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const groupRoutes = require('./routes/groups');
+const instituteRoutes = require('./routes/institute');
+const subAdminRoutes = require('./routes/subAdminRoutes');
+const subAdminStatsRoutes = require('./routes/subAdminStatsRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -30,11 +34,13 @@ app.use(
   })
 );
 
-// Serve static files from the dist directory
-const distPath = path.join(__dirname, 'dist');
-app.use(express.static(distPath));
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
 
-// API Routes
+// API Routes - These should come BEFORE static file serving
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', userRoutes);
 app.use('/api/exams', examRoutes);
@@ -44,8 +50,16 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/papers', paperRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/institute', instituteRoutes);
+app.use('/api/sub-admins', subAdminRoutes);
+app.use('/api/sub-admin-stats', subAdminStatsRoutes);
 
-// Handle client-side routing - this should be after all API routes
+// Serve static files from the dist directory - This should come AFTER API routes
+const distPath = path.join(__dirname, 'dist');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(distPath));
+
+// Handle client-side routing - this should be after all API routes and static file serving
 app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
@@ -151,6 +165,41 @@ app.get('/api/user', async (req, res) => {
   } catch (error) {
     console.error('Auth error:', error);
     res.status(401).json({ message: 'Token is not valid' });
+  }
+});
+
+// Create initial institute record if it doesn't exist
+app.post('/api/institute/init', async (req, res) => {
+  try {
+    const Institute = require('./models/Institute');
+    const existingInstitute = await Institute.findOne();
+    
+    if (existingInstitute) {
+      return res.status(400).json({ message: 'Institute already exists' });
+    }
+
+    const initialInstitute = await Institute.create({
+      email: 'admin@example.com',
+      registrationLink: 'http://localhost:5173/register',
+      loginLink: 'http://localhost:5173/login',
+      licenseLimit: '100',
+      timezone: 'Asia/Kolkata',
+      shortName: 'EMS',
+      fullName: 'Exam Management System',
+      directorName: 'Admin',
+      address: '123 Main Street',
+      district: 'Sample District',
+      state: 'Sample State',
+      pinCode: '123456',
+      contactNumber: '1234567890',
+      about: 'Welcome to our Exam Management System',
+      services: 'Online Examination Services'
+    });
+
+    res.status(201).json(initialInstitute);
+  } catch (error) {
+    console.error('Error creating initial institute:', error);
+    res.status(500).json({ message: 'Error creating initial institute', error: error.message });
   }
 });
 
