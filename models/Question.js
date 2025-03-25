@@ -4,7 +4,6 @@ const questionSchema = new mongoose.Schema({
   examId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Exam',
-    
   },
   questionText: {
     type: String,
@@ -12,18 +11,36 @@ const questionSchema = new mongoose.Schema({
   },
   questionType: {
     type: String,
-    enum: ['multiple-choice', 'true-false', 'short-answer'],
+    enum: [
+      'multiple-choice-single',
+      'multiple-choice-multiple',
+      'true-false',
+      'short-answer',
+      'essay',
+    ],
     required: true,
   },
   options: [
     {
       text: {
         type: String,
-        required: true,
+        required: function () {
+          return [
+            'multiple-choice-single',
+            'multiple-choice-multiple',
+            'true-false',
+          ].includes(this.questionType);
+        },
       },
       isCorrect: {
         type: Boolean,
-        required: true,
+        required: function () {
+          return [
+            'multiple-choice-single',
+            'multiple-choice-multiple',
+            'true-false',
+          ].includes(this.questionType);
+        },
       },
     },
   ],
