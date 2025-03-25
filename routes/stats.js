@@ -56,6 +56,39 @@ router.get('/', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// Get pass/fail statistics
+router.get('/pass-fail', protect, authorize('admin'), async (req, res) => {
+  try {
+    const stats = await Result.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          pass: { $sum: { $cond: [{ $eq: ['$isPassed', true] }, 1, 0] } },
+          fail: { $sum: { $cond: [{ $eq: ['$isPassed', false] }, 1, 0] } },
+          passRate: {
+            $avg: {
+              $cond: [{ $eq: ['$isPassed', true] }, 100, 0],
+            },
+          },
+        },
+      },
+    ]);
+
+    const formattedStats = stats[0] || {
+      total: 0,
+      pass: 0,
+      fail: 0,
+      passRate: 0,
+    };
+
+    res.json(formattedStats);
+  } catch (error) {
+    console.error('Error getting pass/fail stats:', error);
+    res.status(500).json({ message: 'Error getting pass/fail statistics' });
+  }
+});
+
 // Get detailed user statistics
 router.get('/users', protect, authorize('admin'), async (req, res) => {
   try {
