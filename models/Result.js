@@ -11,6 +11,18 @@ const resultSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  attemptNumber: {
+    type: Number,
+    required: true,
+  },
+  startTime: {
+    type: Date,
+    required: true,
+  },
+  endTime: {
+    type: Date,
+    required: true,
+  },
   answers: [
     {
       questionId: {
@@ -18,8 +30,8 @@ const resultSchema = new mongoose.Schema({
         ref: 'Question',
         required: true,
       },
-      selectedOption: {
-        type: String,
+      selectedAnswer: {
+        type: mongoose.Schema.Types.Mixed,
         required: true,
       },
       isCorrect: {
@@ -48,18 +60,26 @@ const resultSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-  startTime: {
-    type: Date,
+  rating: {
+    type: String,
+    enum: ['Excellent', 'Good', 'Average', 'Poor', 'Failed'],
     required: true,
   },
-  endTime: {
-    type: Date,
-    required: true,
+  feedback: {
+    type: String,
   },
-  submittedAt: {
+  status: {
+    type: String,
+    enum: ['in-progress', 'completed', 'timeout'],
+    default: 'in-progress',
+  },
+  createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+// Index for efficient querying of user's attempts for an exam
+resultSchema.index({ examId: 1, userId: 1, attemptNumber: 1 });
 
 module.exports = mongoose.model('Result', resultSchema);

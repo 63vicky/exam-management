@@ -10,17 +10,17 @@ const examSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide exam description'],
   },
-  duration: {
-    type: Number,
-    required: [true, 'Please provide exam duration in minutes'],
+  subject: {
+    type: String,
+    required: [true, 'Please provide subject'],
   },
-  startTime: {
-    type: Date,
-    required: [true, 'Please provide exam start time'],
+  chapter: {
+    type: String,
+    required: [true, 'Please provide chapter'],
   },
-  endTime: {
-    type: Date,
-    required: [true, 'Please provide exam end time'],
+  class: {
+    type: String,
+    required: [true, 'Please provide class'],
   },
   totalMarks: {
     type: Number,
@@ -30,19 +30,38 @@ const examSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Please provide passing marks'],
   },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+  maxAttempts: {
+    type: Number,
+    default: 5,
+    required: [true, 'Please provide maximum attempts allowed'],
   },
-  subject: {
-    type: String,
-    required: [true, 'Please provide subject name'],
+  timeLimit: {
+    type: Number, // in minutes
+    required: [true, 'Please provide time limit in minutes'],
   },
+  startDate: {
+    type: Date,
+    required: [true, 'Please provide start date'],
+  },
+  endDate: {
+    type: Date,
+    required: [true, 'Please provide end date'],
+  },
+  questions: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Question',
+    },
+  ],
   status: {
     type: String,
     enum: ['draft', 'published', 'completed'],
     default: 'draft',
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
   },
   createdAt: {
     type: Date,
